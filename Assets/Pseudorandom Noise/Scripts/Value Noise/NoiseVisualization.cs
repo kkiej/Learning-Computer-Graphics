@@ -7,10 +7,60 @@ using static Noise;
 
 public class NoiseVisualization : Visualization
 {
+    private static ScheduleDelegate[,] noiseJobs =
+    {
+        {
+            Job<Lattice1D<LatticeNormal, Perlin>>.ScheduleParallel,
+            Job<Lattice1D<LatticeTilling, Perlin>>.ScheduleParallel,
+            Job<Lattice2D<LatticeNormal, Perlin>>.ScheduleParallel,
+            Job<Lattice2D<LatticeTilling, Perlin>>.ScheduleParallel,
+            Job<Lattice3D<LatticeNormal, Perlin>>.ScheduleParallel,
+            Job<Lattice3D<LatticeTilling, Perlin>>.ScheduleParallel
+        },
+        {
+            Job<Lattice1D<LatticeNormal, Turbulence<Perlin>>>.ScheduleParallel,
+            Job<Lattice1D<LatticeTilling, Turbulence<Perlin>>>.ScheduleParallel,
+            Job<Lattice2D<LatticeNormal, Turbulence<Perlin>>>.ScheduleParallel,
+            Job<Lattice2D<LatticeTilling, Turbulence<Perlin>>>.ScheduleParallel,
+            Job<Lattice3D<LatticeNormal, Turbulence<Perlin>>>.ScheduleParallel,
+            Job<Lattice3D<LatticeTilling, Turbulence<Perlin>>>.ScheduleParallel
+        },
+        {
+            Job<Lattice1D<LatticeNormal, Value>>.ScheduleParallel,
+            Job<Lattice1D<LatticeTilling, Value>>.ScheduleParallel,
+            Job<Lattice2D<LatticeNormal, Value>>.ScheduleParallel,
+            Job<Lattice2D<LatticeTilling, Value>>.ScheduleParallel,
+            Job<Lattice3D<LatticeNormal, Value>>.ScheduleParallel,
+            Job<Lattice3D<LatticeTilling, Value>>.ScheduleParallel
+        },
+        {
+            Job<Lattice1D<LatticeNormal, Turbulence<Value>>>.ScheduleParallel,
+            Job<Lattice1D<LatticeTilling, Turbulence<Value>>>.ScheduleParallel,
+            Job<Lattice2D<LatticeNormal, Turbulence<Value>>>.ScheduleParallel,
+            Job<Lattice2D<LatticeTilling, Turbulence<Value>>>.ScheduleParallel,
+            Job<Lattice3D<LatticeNormal, Turbulence<Value>>>.ScheduleParallel,
+            Job<Lattice3D<LatticeTilling, Turbulence<Value>>>.ScheduleParallel
+        }
+    };
+    
     private static int noiseId = Shader.PropertyToID("_Noise");
 
     [SerializeField]
-    private int seed;
+    private Settings noiseSettings = Settings.Default;
+
+    public enum NoiseType
+    {
+        Perlin, PerlinTurbulence, Value, ValueTurbulence
+    }
+
+    [SerializeField]
+    private NoiseType type;
+
+    [SerializeField, Range(1, 3)]
+    private int dimensions = 3;
+
+    [SerializeField]
+    private bool tilling;
 
     [SerializeField] private SpaceTRS domain = new SpaceTRS
     {
@@ -38,7 +88,7 @@ public class NoiseVisualization : Visualization
 
     protected override void UpdateVisualization(NativeArray<float3x4> positions, int resolution, JobHandle handle)
     {
-        Job<Lattice1D>.ScheduleParallel(positions, noise, seed, domain, resolution, handle).Complete();
+        noiseJobs[(int)type, 2 * dimensions - (tilling ? 1 : 2)](positions, noise, noiseSettings, domain, resolution, handle).Complete();
         noiseBuffer.SetData(noise.Reinterpret<float>(4 * 4));
     }
 }
